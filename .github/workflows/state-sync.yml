@@ -1,11 +1,16 @@
 name: State Sync Check (Reusable)
 on:
   workflow_call:
+    secrets: {}
 jobs:
   verify-state:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Install jq + yq (mikefarah v4)
         run: |
@@ -15,13 +20,21 @@ jobs:
           sudo chmod +x /usr/local/bin/yq
           yq --version
 
+      - name: Debug snapshot
+        run: |
+          echo "PWD=$(pwd)"
+          ls -la .runner || true
+          ls -la docs || true
+          test -f .runner/state.json && head -n 20 .runner/state.json || echo "no state.json"
+          test -f docs/handoff.md && head -n 20 docs/handoff.md || echo "no handoff.md"
+
       - name: State and Handoff present
         run: test -f .runner/state.json && test -f docs/handoff.md
 
       - name: Schema keys valid
         run: jq -e '.project and .phase and .step' .runner/state.json >/dev/null
 
-      - name: Planner governance referenced
+      - name: Planner governance referenced (tolerant for legacy)
         run: |
           if [ -f .runner/governance/governance.yaml ]; then
             yq -e '.planner_rules' .runner/governance/governance.yaml >/dev/null
