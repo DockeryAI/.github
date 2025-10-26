@@ -6,10 +6,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: sudo apt-get update && sudo apt-get install -y jq
+      - run: sudo apt-get update && sudo apt-get install -y jq yq
       - name: State and Handoff present
         run: test -f .runner/state.json && test -f docs/handoff.md
       - name: Schema keys valid
         run: jq -e '.project and .phase and .step' .runner/state.json >/dev/null
       - name: Planner governance referenced
-        run: '[ -f .runner/governance/governance.yaml ] && yq ".planner_rules" .runner/governance/governance.yaml || echo "No planner governance file found (ok for legacy repos)"'
+        run: '[ -f .runner/governance/governance.yaml ] && yq ".planner_rules" .runner/governance/governance.yaml >/dev/null || echo "No planner governance file found (ok for legacy repos)"'
