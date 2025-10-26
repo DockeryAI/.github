@@ -1,0 +1,16 @@
+name: Handoff Guard (Reusable)
+on:
+  workflow_call:
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y jq python3-pip yq
+      - run: pip3 install --quiet jsonschema
+      - name: Regenerate handoff
+        run: ./.runner/tasks/br-handoff.zsh || true
+      - name: Handoff fresh
+        run: git diff --exit-code docs/handoff.md || { echo "::error ::Handoff is out of date. Run .runner/tasks/br-handoff.zsh and commit docs/handoff.md"; exit 1; }
+      - name: Micro-steps valid (if present)
+        run: '[ -x .runner/tasks/validate-microsteps.zsh ] && .runner/tasks/validate-microsteps.zsh || echo "no microsteps validator in this repo"'
