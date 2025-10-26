@@ -6,10 +6,25 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: sudo apt-get update && sudo apt-get install -y jq yq
+
+      - name: Install jq + yq (mikefarah v4)
+        run: |
+          sudo apt-get update && sudo apt-get install -y jq wget
+          YQ_VERSION=v4.44.3
+          sudo wget -q "https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_amd64" -O /usr/local/bin/yq
+          sudo chmod +x /usr/local/bin/yq
+          yq --version
+
       - name: State and Handoff present
         run: test -f .runner/state.json && test -f docs/handoff.md
+
       - name: Schema keys valid
         run: jq -e '.project and .phase and .step' .runner/state.json >/dev/null
+
       - name: Planner governance referenced
-        run: '[ -f .runner/governance/governance.yaml ] && yq ".planner_rules" .runner/governance/governance.yaml >/dev/null || echo "No planner governance file found (ok for legacy repos)"'
+        run: |
+          if [ -f .runner/governance/governance.yaml ]; then
+            yq -e '.planner_rules' .runner/governance/governance.yaml >/dev/null
+          else
+            echo "No planner governance file found (ok for legacy repos)"
+          fi
